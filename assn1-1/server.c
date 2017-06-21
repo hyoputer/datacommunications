@@ -1,0 +1,55 @@
+#include<sys/socket.h>
+#include<sys/stat.h>
+#include<arpa/inet.h>
+#include<stdio.h>
+#include<string.h>
+#include<unistd.h>
+#define MAXBUF 1024
+
+int main(int argc, char **argv)
+{
+  struct sockaddr_in server_addr, client_addr;
+  int server_sockfd, client_sockfd;
+  int client_addr_len;
+  char buf[MAXBUF];
+
+  if (0 > (server_sockfd = socket(AF_INET, SOCK_STREAM, 0)))
+    printf("Error creating socket\n");
+  
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  server_addr.sin_port = htons(8000);
+
+  if (0 > (bind(server_sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr))))
+    printf("Error binding\n");
+
+  if (0 > listen(server_sockfd, 5))
+    printf("Error listening\n");
+
+  client_addr_len = sizeof(client_addr);
+
+  while(1)
+  {
+    if(0 > (client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_addr, &client_addr_len)))
+      printf("Error accepting\n");
+
+    while(1)
+    {
+      memset(buf, 0x00, MAXBUF);
+
+      if(read(client_sockfd, buf, MAXBUF) <= 0)
+      {
+        close(client_sockfd);
+      }
+
+      if(write(client_sockfd, buf, MAXBUF) <= 0)
+      {
+        close(client_sockfd);
+      }
+    }
+
+    close(client_sockfd);
+  }
+  close(server_sockfd);
+  return 0;
+}
